@@ -8,6 +8,7 @@ const {spawn} = require('child_process');
 const {statSync} = require('fs');
 const {unlink} = require('fs');
 const {writeFile} = require('fs');
+const {WebSocket} = require('ws');
 
 const importLazy = require('import-lazy')(require);
 
@@ -26,6 +27,7 @@ const chain = importLazy('./chain');
 const commands = importLazy('./commands');
 const display = importLazy('./display');
 const encryption = importLazy('./encryption');
+const fedimint = importLazy('./fedimint');
 const lnd = importLazy('./lnd');
 const lnurl = importLazy('./lnurl');
 const {lnurlFunctions} = commandConstants;
@@ -623,6 +625,27 @@ prog
           lnd: (await lnd.authenticatedLnd({logger, node: options.node})).lnd,
           size: args.size,
           tokens_per_vbyte: options.feerate,
+        },
+        responses.returnObject({logger, reject, resolve}));
+      } catch (err) {
+        return logger.error({err}) && reject();
+      }
+    });
+  })
+
+  .command('fedimint', 'Join a federation (Highly Experimental)')
+  .visible(false)
+  .help('Join a fedemint fedaration and send/receive lightning payments')
+  .option('--node <node_name>', 'Node to join a federation from')
+  .action((args, options, logger) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        return fedimint.manageFedimint({
+          logger,
+          ws: WebSocket,
+          ask: await commands.interrogate({}),
+          lnd: (await lnd.authenticatedLnd({logger, node: options.node})).lnd,
+          request: commands.simpleRequest,
         },
         responses.returnObject({logger, reject, resolve}));
       } catch (err) {
